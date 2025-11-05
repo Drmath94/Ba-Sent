@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sentiment — AI Demo</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="page">
+    <div class="card">
+      <header>
+        <h1>Sentiment Detector</h1>
+        <p class="muted">Paste your text below and get instant sentiment prediction.</p>
+      </header>
+
+      <form id="predictForm" class="form">
+        <textarea name="text" id="text" placeholder="Type or paste text here..." rows="6" required></textarea>
+        <div class="row">
+          <button id="submitBtn" type="submit">Predict</button>
+        </div>
+      </form>
+
+      <section id="result" class="result hidden" aria-live="polite">
+        <!-- results appear here -->
+      </section>
+
+      <footer class="muted small">Built with ❤️ — paste and test.</footer>
+    </div>
+  </main>
+
+<script>
+const form = document.getElementById("predictForm");
+const resultDiv = document.getElementById("result");
+const submitBtn = document.getElementById("submitBtn");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  resultDiv.classList.add("hidden");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Predicting…";
+
+  const formData = new FormData(form);
+  try {
+    const resp = await fetch("/predict", { method: "POST", body: formData });
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      resultDiv.innerHTML = `<div class="error">Error: ${data.error || JSON.stringify(data)}</div>`;
+      resultDiv.classList.remove("hidden");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Predict";
+      return;
+    }
+
+    let html = `<div class="outcome"><strong>Prediction:</strong> ${data.prediction}</div>`;
+    if (data.confidence !== undefined) {
+      html += `<div class="confidence"><strong>Confidence:</strong> ${data.confidence}</div>`;
+    }
+    resultDiv.innerHTML = html;
+    resultDiv.classList.remove("hidden");
+  } catch (err) {
+    resultDiv.innerHTML = `<div class="error">Request failed: ${err.message}</div>`;
+    resultDiv.classList.remove("hidden");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Predict";
+  }
+});
+</script>
+</body>
+</html>
